@@ -103,13 +103,25 @@ function SeasonalTimeline(data, neighborhood, offense, firearm, year, {width} = 
         tip: true,
         title: "Average"
       }),
+      Plot.crosshairX(plotData, {x: "Month", stroke: "#888", strokeWidth: 1.5, textFillOpacity: 0, textStrokeOpacity: 0}),
+      Plot.dot(plotData, {
+        x: "Month",
+        y: "IncidentCount",
+        z: "Year",
+        stroke: "Year",
+        fill: "white",
+        r: 4,
+        pointer: "x",
+        strokeWidth: 2,
+        opacity: 1
+      }),
       Plot.tip(plotData, Plot.pointerX({
         x: "Month",
         y: "IncidentCount",
         channels: [
           {name: "Date:", value: d => d.YearMonth},
           {name: "Incidents:", value: d => d.IncidentCount},
-          {name: "Average Incidents:", value: d => d.IncidentMonthlyAvg},
+          {name: "Average:", value: d => d.IncidentMonthlyAvg},
         ]
       }))
     ]
@@ -288,7 +300,7 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
   <h3 style="font-weight: 300px; font-style: italic;">Hover over a point in time to view details.</h3>
   <div class="custom-legend">
     <span class="dashed-line"></span>
-    <span class="legend-label">All-time average</span>
+    <span class="legend-label">Average</span>
     <span class="legend-line" style="border-top: 3px solid #7fc97f;"></span>
     <span class="legend-label">2021</span>
     <span class="legend-line" style="border-top: 3px solid #beaed4;"></span>
@@ -410,7 +422,7 @@ body, html {
 .kpi-card h3 {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #6B8FA4;
+  color:rgb(62, 99, 120);
   margin: 12px 0 0 0;
 }
 
