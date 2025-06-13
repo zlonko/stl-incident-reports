@@ -18,6 +18,8 @@ const incidents = FileAttachment("data/stlmpd_nibrs_with_avg.csv").csv({
       MonthName: d => d,
       IncidentCount: d => +d,
       IncidentMonthlyAvg: d => +d,
+      IncidentYoYPctChg: d => +d,
+      IncidentYoYChg: d => d,
       Neighborhood: d => d
     }
 });
@@ -92,17 +94,6 @@ function SeasonalTimeline(data, neighborhood, offense, firearm, year, {width} = 
         stroke: "Year",
         strokeWidth: 1.5,
       }),
-      Plot.lineY(plotData, {
-        x: "Month",
-        y: "IncidentMonthlyAvg",
-        z: "Year",
-        stroke: "#000",
-        strokeDasharray: "4 4",
-        markerSize: 4,
-        strokeWidth: 2,
-        tip: true,
-        title: "Average"
-      }),
       Plot.crosshairX(plotData, {x: "Month", stroke: "#888", strokeWidth: 1.5, textFillOpacity: 0, textStrokeOpacity: 0}),
       Plot.dot(plotData, {
         x: "Month",
@@ -114,6 +105,17 @@ function SeasonalTimeline(data, neighborhood, offense, firearm, year, {width} = 
         pointer: "x",
         strokeWidth: 2,
         opacity: 1
+      }),
+      Plot.lineY(plotData, {
+        x: "Month",
+        y: "IncidentMonthlyAvg",
+        z: "Year",
+        stroke: "#3C4A5B",
+        strokeDasharray: "4 4",
+        markerSize: 4,
+        strokeWidth: 2,
+        tip: true,
+        title: "Average"
       }),
       Plot.tip(plotData, Plot.pointerX({
         x: "Month",
@@ -167,7 +169,7 @@ const maxIncidentMonthlyAvg = Math.max(...filteredTableData.map(d => +d.Incident
 const maxIncidentCount = Math.max(...filteredTableData.map(d => +d.IncidentCount || 0));
 ```
 
-<!-- Create year-over-year variable -->
+<!-- Create year-over-year variables -->
 ```js
 let filtered = incidents.filter(d =>
   d.Neighborhood === selectedNeighborhood &&
@@ -179,7 +181,17 @@ let displayYear = selectedYear === "All years"
   ? Math.max(...filtered.map(d => d.Year))
   : selectedYear;
 
-let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A";
+let previousYear = displayYear - 1;
+
+let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg.toFixed(1) ?? "N/A";
+
+// let yoyChg = filtered.find(d => d.Year == displayYear)?.IncidentYoYChg ?? "N/A";
+
+// let currYearCount = filtered.find(d => d.Year == displayYear)?.CurrYearCount ?? "N/A";
+
+// let prevYearCount = filtered.find(d => d.Year == displayYear)?.PrevYearCount ?? "N/A";
+
+// let currYearDiff = filtered.find(d => d.Year == displayYear)?CurrYearDiff ?? "N/A");
 ```
 
 <!-- HTML page structure and text -->
@@ -198,7 +210,7 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
 </div>
 
 <!-- Data selection rows -->
-<div class="selection-row" style="display: flex; gap: 32px; flex-wrap: wrap;">
+<div class="selection-row">
 <div>
   <label>
   Select a neighborhood
@@ -289,12 +301,11 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
       <h3 class="section-meta">Firearm Used: <strong>${selectedFirearm}</strong></h3>
     </div>
     <div class="kpi-card">
-      <h2>Yearly Change in Incidents</h2>
+      <h2 class="kpi-header">Year-over-year change (${displayYear})</h2>
       <div class="kpi-row">
         <span class="big">${yoy}%</span>
         <span class="medium"><strong>${Trend(yoy)}</strong></span>
       </div>
-      <h3>January to December ${displayYear}</h3>
     </div>
   </div>
   <h3 style="font-weight: 300px; font-style: italic;">Hover over a point in time to view details.</h3>
@@ -319,7 +330,7 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
 
   <div class="card" style="padding: 0; border: none;">
   <h3 style="margin-bottom: 8px; font-style: italic;">Select a header to sort the table by value.</h3>
-  <div>
+  <div class="sortable-table">
       ${Inputs.table(filteredTableData, {
         sort: "Year",
         reverse: true,
@@ -331,10 +342,11 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
         },
       })}
   </div>
+
+  <h3 style="max-width: 100%; margin-bottom: 8px; margin-top: 12px; font-style: italic;"><strong>Data Source: </strong>National Incident-Based Reporting System (NIBRS). Retrieved June 9, 2025, from <a href="https://slmpd.org/stats/">slmpd.org</a>.</h3>
 </div>
   </div>
 </div>
-
 
 <!-- CSS styles -->
 <style>
@@ -342,13 +354,14 @@ let yoy = filtered.find(d => d.Year === displayYear)?.IncidentYoYPctChg ?? "N/A"
 body, html {
   min-height: 100vh;
   background: linear-gradient(120deg, #e3ecfa 0%, #f7fbff 50%);
+  font-family: 'Source Sans Pro', system-ui, sans-serif;
 }
 
 .hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: var(--sans-serif);
+  font-family: 'Public Sans', system-ui, sans-serif;
   margin: 4rem 0 4rem;
   text-wrap: balance;
   text-align: center;
@@ -361,7 +374,7 @@ body, html {
   font-size: 14vw;
   font-weight: 900;
   line-height: 1;
-  background: linear-gradient(30deg, #3B5FC0, #22366d);
+  background: linear-gradient(30deg,rgb(46, 78, 166), #22366d);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -397,9 +410,11 @@ body, html {
   flex-direction: column;
   align-items: flex-start;
   position: relative;
+  font-family: 'Public Sans', system-ui, sans-serif;
 }
 
 .kpi-card h2 {
+  width: 100%;
   font-size: 1rem;
   font-weight: 600;
   color: #3a4a6b;
@@ -409,7 +424,6 @@ body, html {
   font-size: 2.4rem;
   font-weight: 800;
   color: #2a3a5a;
-  margin: 0 0 4px 0;
   letter-spacing: -1px;
 }
 
@@ -473,7 +487,7 @@ label {
 }
 .observablehq label,
 label {
-    font-family: var(--sans-serif);
+    font-family: 'Source Sans Pro', system-ui, sans-serif;
     font-size: 15px;
     font-weight: 500;
     color: white;
@@ -486,11 +500,12 @@ label {
   gap: 32px;
   width: 100%;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .label-area {
   flex: 1;
-  min-width: 0; /* Prevents flex item from overflowing */
+  min-width: 300px;
 }
 
 .section-title {
@@ -502,7 +517,7 @@ label {
 .section-subtitle {
   padding-bottom: 4px;
   font-size: 18px;
-  font-family: var(--sans-serif);
+  font-family: 'Public Sans', system-ui, sans-serif;
   font-weight: 500 !important;
 }
 .section-meta {
@@ -556,6 +571,7 @@ th[title="IncidentCount"], th[title="IncidentMonthlyAvg"] {
   display: flex;
   align-items: baseline;
   gap: 16px;
+  margin-bottom: 4px;
 }
 
 .kpi-card .kpi-row {
@@ -566,6 +582,13 @@ th[title="IncidentCount"], th[title="IncidentMonthlyAvg"] {
 
 .kpi-card h3 {
   margin: 0;
+}
+
+.selection-row {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 12px;
+  column-gap: 32px;
 }
 
 .selection-row label {
@@ -582,6 +605,15 @@ th[title="IncidentCount"], th[title="IncidentMonthlyAvg"] {
 
 }
 
+.sortable-table {
+  border-bottom: solid;
+  border-width: 2px;
+  border-color:rgb(86, 103, 124);
+}
+
 </style>
+
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 
